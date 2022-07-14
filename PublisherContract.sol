@@ -22,11 +22,12 @@ abstract contract PublisherContract is ERC1155, AccessControl {
 
     event TokenMinted(address DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
 
-    function _initializeContract(bytes32 name, bytes32[5] memory description) private {
+    function _initializeContract(bytes32 name, bytes32[5] memory description) internal {
         require(_ContractInitialized == false, "contract already initialized");
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(DEPLOYER_ROLE,msg.sender);
         _ContractDeployer = msg.sender;
+        _ContractOwner = msg.sender;
         _ContractOwnerName = name;
         _ContractDescription = description;
         _ContractInitialized = true;
@@ -60,14 +61,15 @@ abstract contract PublisherContract is ERC1155, AccessControl {
         COUNTER.increment();
         uint256 current = COUNTER.current();
         _mint(destination,current,1,"");
-        emit TokenMinted(destination,current,uuid,rs,pt);
         address Deployer = payable(_ContractDeployer);
         (bool success,) = Deployer.call{value: msg.value}("");
         require(success,"failed to forward fund to deployer");
+        emit TokenMinted(destination,current,uuid,rs,pt);
     }
 
-    function GetContractInformation() public view returns(bytes32,bytes32[5] memory) {
-        return (_ContractOwnerName,_ContractDescription);
+    function GetContractInformation() public view returns(bytes32,bytes32[5] memory,address) {
+        require(_ContractInitialized == true,"contract is uninitialized");
+        return (_ContractOwnerName,_ContractDescription,_ContractOwner);
     }
 
 

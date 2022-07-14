@@ -12,7 +12,7 @@ abstract contract PublisherContract is ERC1155, AccessControl {
     
     bytes32 private constant DEPLOYER_ROLE = keccak256("DEPLOYER_ROLE");
     bytes32 private constant PUBLISHER_ROLE = keccak256("PUBLISHER_ROLE");
-    bytes32[3] private _ContractOwnerName;
+    bytes32 private _ContractOwnerName;
     bytes32[5] private _ContractDescription;
     address private _ContractDeployer;
     address private _ContractOwner;
@@ -22,7 +22,7 @@ abstract contract PublisherContract is ERC1155, AccessControl {
 
     event TokenMinted(address DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
 
-    function _initializeContract(bytes32[3] memory name, bytes32[5] memory description) private {
+    function _initializeContract(bytes32 name, bytes32[5] memory description) private {
         require(_ContractInitialized == false, "contract already initialized");
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(DEPLOYER_ROLE,msg.sender);
@@ -64,6 +64,10 @@ abstract contract PublisherContract is ERC1155, AccessControl {
         address Deployer = payable(_ContractDeployer);
         (bool success,) = Deployer.call{value: msg.value}("");
         require(success,"failed to forward fund to deployer");
+    }
+
+    function GetContractInformation() public view returns(bytes32,bytes32[5] memory) {
+        return (_ContractOwnerName,_ContractDescription);
     }
 
 

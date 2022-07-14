@@ -22,7 +22,7 @@ abstract contract PublisherContract is ERC1155, AccessControl {
 
     event TokenMinted(address DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
 
-    function initializeContract(bytes32[3] memory name, bytes32[5] memory description) private {
+    function _initializeContract(bytes32[3] memory name, bytes32[5] memory description) private {
         require(_ContractInitialized == false, "contract already initialized");
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(DEPLOYER_ROLE,msg.sender);
@@ -39,11 +39,11 @@ abstract contract PublisherContract is ERC1155, AccessControl {
         _revokeRole(DEFAULT_ADMIN_ROLE,_ContractDeployer);
     }
 
-    function grantPublisherRole(address publisher) private {
+    function grantPublisherRole(address publisher) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(PUBLISHER_ROLE,publisher);
     }
 
-    function revokePublisherRole(address publisher) private {
+    function revokePublisherRole(address publisher) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _revokeRole(PUBLISHER_ROLE,publisher);
     }
 
@@ -51,11 +51,11 @@ abstract contract PublisherContract is ERC1155, AccessControl {
         _MintingFee = fee;
     }
 
-    function getMintingFee() public view returns(uint256){
+    function getMintingFee() public view onlyRole(DEFAULT_ADMIN_ROLE) returns(uint256){
         return _MintingFee;
     }
 
-    function _MintToken(address destination, bytes32 uuid, bytes8 rs, bytes4 pt) public payable onlyRole(PUBLISHER_ROLE) {
+    function MintToken(address destination, bytes32 uuid, bytes8 rs, bytes4 pt) public payable onlyRole(PUBLISHER_ROLE) {
         require(msg.value >= _MintingFee,"insufficient minting fee");
         COUNTER.increment();
         uint256 current = COUNTER.current();

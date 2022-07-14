@@ -32,7 +32,7 @@ abstract contract PublisherContract is ERC1155, AccessControl {
         _ContractInitialized = true;
     }
 
-    function transferOwnership(address newOwner) private {
+    function transferOwnership(address newOwner) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(DEFAULT_ADMIN_ROLE,newOwner);
         _setupRole(PUBLISHER_ROLE,newOwner);
         _ContractOwner = newOwner;

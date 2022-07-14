@@ -3,12 +3,10 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-abstract contract PublisherContract is ERC1155,AccessControl,Pausable,ReentrancyGuard {
+abstract contract PublisherContract is ERC1155, AccessControl {
 
     using Counters for Counters.Counter;
     
@@ -24,7 +22,7 @@ abstract contract PublisherContract is ERC1155,AccessControl,Pausable,Reentrancy
 
     event TokenMinted(address DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
 
-    function initializeContract(bytes32[3] memory name, bytes32[5] memory description) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function initializeContract(bytes32[3] memory name, bytes32[5] memory description) private {
         require(_ContractInitialized == false, "contract already initialized");
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(DEPLOYER_ROLE,msg.sender);
@@ -34,18 +32,18 @@ abstract contract PublisherContract is ERC1155,AccessControl,Pausable,Reentrancy
         _ContractInitialized = true;
     }
 
-    function transferOwnership(address newOwner) public {
+    function transferOwnership(address newOwner) private {
         _setupRole(DEFAULT_ADMIN_ROLE,newOwner);
         _setupRole(PUBLISHER_ROLE,newOwner);
         _ContractOwner = newOwner;
         _revokeRole(DEFAULT_ADMIN_ROLE,_ContractDeployer);
     }
 
-    function grantPublisherRole(address publisher) public {
+    function grantPublisherRole(address publisher) private {
         _setupRole(PUBLISHER_ROLE,publisher);
     }
 
-    function revokePublisherRole(address publisher) public {
+    function revokePublisherRole(address publisher) private {
         _revokeRole(PUBLISHER_ROLE,publisher);
     }
 
@@ -57,7 +55,7 @@ abstract contract PublisherContract is ERC1155,AccessControl,Pausable,Reentrancy
         return _MintingFee;
     }
 
-    function _MintToken(address destination, bytes32 uuid, bytes8 rs, bytes4 pt) public payable {
+    function _MintToken(address destination, bytes32 uuid, bytes8 rs, bytes4 pt) public payable onlyRole(PUBLISHER_ROLE) {
         require(msg.value >= _MintingFee,"insufficient minting fee");
         COUNTER.increment();
         uint256 current = COUNTER.current();

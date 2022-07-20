@@ -8,7 +8,6 @@ import "github.com/julianrichie/nftlizer/blob/main/EscrowContract.sol";
 abstract contract NFTLizerDeployer is NFTLizerAccessControl {
 
     uint256 private _MintingFee;
-    address private _ContractDeployer;
     address private constant _EscrowContractAddress = 0x44DD2553357660a95de348f635C16d3d0391b4DB;
 
     modifier requireFee() {
@@ -17,13 +16,9 @@ abstract contract NFTLizerDeployer is NFTLizerAccessControl {
         _;
     }
 
-    function getContractDeployer() public view returns(address) {
-        return _ContractDeployer;
-    }
-
     function _forwardFee() internal {
-        address proxy = payable(_EscrowContractAddress);
-        (bool success,) = proxy.call{value: msg.value}("");
+        address escrow = payable(_EscrowContractAddress);
+        (bool success,) = escrow.call{value: msg.value}("");
         require(success,"failed to forward fund to proxy");
     }
 
@@ -34,5 +29,5 @@ abstract contract NFTLizerDeployer is NFTLizerAccessControl {
     function getMintingFee() public view onlyRole(DEFAULT_ADMIN_ROLE) returns(uint256) {
         return _MintingFee;
     }
-    
+
 }

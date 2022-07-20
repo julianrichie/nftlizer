@@ -14,28 +14,4 @@ abstract contract NFTLizerAccessControl is AccessControl {
         require(destination != msg.sender,"self revoke not permitted");
         _;
     }
-
-    function grantPublisherRole(address publisher) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setupRole(PUBLISHER_ROLE,publisher);
-    }
-
-    function revokePublisherRole(address publisher) public selfRevokeProtect(publisher) onlyRole(DEFAULT_ADMIN_ROLE) {
-        _revokeRole(PUBLISHER_ROLE,publisher);
-    }
-
-    function grantApprovalRole(address approval) public  onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setupRole(APPROVAL_ROLE,approval);
-    }
-
-    function revokeApprovalRole(address approval) public selfRevokeProtect(approval) onlyRole(DEFAULT_ADMIN_ROLE) {
-        _revokeRole(APPROVAL_ROLE,approval);
-    }
-
-    function grantAdminRole(address admin) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setupRole(DEFAULT_ADMIN_ROLE, admin);
-    }
-
-    function revokeAdminRole(address admin) public selfRevokeProtect(admin) onlyRole(DEFAULT_ADMIN_ROLE) {
-        _revokeRole(DEFAULT_ADMIN_ROLE,admin);
-    }
 }

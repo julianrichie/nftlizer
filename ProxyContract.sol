@@ -2,12 +2,13 @@
 // Copyright (c) 2022 JULIAN WAJONG julian@nftlizer.com NFTLIZER.COM
 pragma solidity ^0.8.0;
 
-import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
 import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
+import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
+
 abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwnership, UseProxyContract{
 
     address private _ContractOwner;

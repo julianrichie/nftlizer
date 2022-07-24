@@ -1,23 +1,30 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2022 JULIAN WAJONG julian@nftlizer.com NFTLIZER.COM
-// Test contract to implement PublisherContract
 pragma solidity ^0.8.0;
 
-import "./PublisherContract.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "./TransferableOwnership.sol";
 
-contract TestContract is PublisherContract {
+contract NFTLizerProxyContract is AccessControl, TransferableOwnership {
 
-    // TO SAVE GAS FEE STRING MUST BE CONVERTED TO BYTES32/[] TYPE
-    bytes32 private constant ContractOwnerName = bytes32(0x4a756c69616e205269636869652057616a6f6e67000000000000000000000000);
-    bytes32[5] private ContractDescription = [
-        bytes32(0x636f6e7472616374206465736372697074696f6e20676f657320686572652020),
-        bytes32(0x636f6e7472616374206465736372697074696f6e20676f657320686572652020),
-        bytes32(0x636f6e7472616374206465736372697074696f6e20676f657320686572652020),
-        bytes32(0x636f6e7472616374206465736372697074696f6e20676f657320686572652020),
-        bytes32(0x636f6e7472616374206465736372697074696f6e20676f657320686572652020)];
+    mapping(address => uint256) private CONTRACT_MINTING_FEE;
 
-    constructor() ERC1155("") {
-        _initializeContract(ContractOwnerName,ContractDescription,0x583031D1113aD414F02576BD6afaBfb302140225);
+    modifier callerIsContract() {
+        require(Address.isContract(msg.sender),"not a valid contract address");
+        _;
+    }
+
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+    
+    function getMintingFee() callerIsContract public view returns (uint256){
+        return CONTRACT_MINTING_FEE[msg.sender];
+    }
+
+    function setMintingFee(address addr,uint256 fee) public onlyRole(DEFAULT_ADMIN_ROLE){
+        CONTRACT_MINTING_FEE[addr] = fee;
     }
 
 }

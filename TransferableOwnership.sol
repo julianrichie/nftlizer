@@ -4,17 +4,25 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 
-abstract contract TransferableOwnership is AccessControl {
+abstract contract UseProxyContract is AccessControl { 
 
-    address internal _ContractOwner;
+    address internal _WithdrawalWalletAddress = 0x0000000000000000000000000000000000000000;
+    address internal _NFTLizerProxyContract = 0x0000000000000000000000000000000000000000;
 
-    function transferOwnership(address from, address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        _setupRole(DEFAULT_ADMIN_ROLE,to);
-        _ContractOwner = to;
-        _revokeRole(DEFAULT_ADMIN_ROLE,from);
+    function setWithdrawalWalletAddress(address addr) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _WithdrawalWalletAddress = addr;
     }
 
-    function getContractOwner() public view returns(address) {
-        return _ContractOwner;
+    function setNFTLizerProxyContractAddress(address addr) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _NFTLizerProxyContract = addr;
     }
+
+    function getWithdrawalWalletAddress() public view returns (address) {
+        return _WithdrawalWalletAddress;
+    }
+
+    function getNFTLizerProxyContractAddress() public view returns (address) {
+        return _NFTLizerProxyContract;
+    }
+
 }

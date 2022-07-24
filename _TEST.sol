@@ -17,6 +17,7 @@ contract TestContract is PublisherContract {
         bytes32(0x636f6e7472616374206465736372697074696f6e20676f657320686572652020)];
 
     constructor() ERC1155("") {
-        _initializeContract(ContractOwnerName,ContractDescription);
+        _initializeContract(ContractOwnerName,ContractDescription,0x583031D1113aD414F02576BD6afaBfb302140225);
     }
+
 }

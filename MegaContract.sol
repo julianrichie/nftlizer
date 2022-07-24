@@ -7,8 +7,11 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
+import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
+import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
 
-contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard {
+contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard,TransferableOwnership, UseProxyContract {
     using Counters for Counters.Counter;
 
     struct WalletOwner {
@@ -16,12 +19,16 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard {
         uint256 block_number;
         bytes32 block_hash;
     }
+
+    modifier feeProtection() {
+        uint256 fee = NFTLizerProxyContract(_NFTLizerProxyContract).getMintingFee();
+        require(msg.value >= fee);
+        _;
+    }
     
     bytes32 private constant PUBLISHER_ROLE = keccak256("PUBLISHER_ROLE");
-    uint256 private MINTING_FEE = 0;
     mapping(address => WalletOwner) private WALLET_INFORMATION;
     mapping(uint256 => address) private TOKEN_PUBLISHERS;
-    address private WITHDRAWAL_WALLET;
     Counters.Counter private COUNTER;
 
     event PublisherAdded(address wallet,bytes32[3] name);
@@ -29,7 +36,6 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard {
 
     constructor() ERC1155("") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        WITHDRAWAL_WALLET = msg.sender;
     }
 
     //ADMINISTRATIVE PARTS
@@ -46,22 +52,8 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard {
         _unpause();
     }
 
-    function SetMintingFee(uint256 fee) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        MINTING_FEE = fee;
-    }
-
-    function GetMintingFee() public view returns(uint256){
-        return MINTING_FEE;
-    }
-
     function GetContractBalance() public view returns (uint256) {
         return address(this).balance;
-    }
-
-    function WithdrawBalance() public nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {
-        uint256 amount = address(this).balance;
-        (bool success,) = WITHDRAWAL_WALLET.call{value: amount}("");
-        require(success,"failed to withdraw balance");
     }
 
     function AddPublisher(address wallet,bytes32[3] memory name) public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -72,11 +64,13 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard {
     }
 
     // PUBLIC ACCESSIBLE
-    function MintToken(address destination,bytes32 uuid, bytes8 rs, bytes4 pt) public payable whenNotPaused onlyRole(PUBLISHER_ROLE){
-        require(msg.value >= MINTING_FEE, "insufficient amount");
+    function MintToken(address destination,bytes32 uuid, bytes8 rs, bytes4 pt) public payable whenNotPaused feeProtection onlyRole(PUBLISHER_ROLE){
         COUNTER.increment();
         uint256 current = COUNTER.current();
         _mint(destination,current,1,"");
+        address wallet = payable(_WithdrawalWalletAddress);
+        (bool success,) = wallet.call{value: msg.value}("");
+        require(success,"failed to forward fund to proxy");
         TOKEN_PUBLISHERS[current] = msg.sender;
         emit TokenMinted(msg.sender,destination,current,uuid,rs,pt);
     }
@@ -88,6 +82,11 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard {
 
     function GetTokenPublisher(uint256 id) public view returns(address) {
         return TOKEN_PUBLISHERS[id];
+    }
+
+    function getMintingFee() public view onlyRole(DEFAULT_ADMIN_ROLE) returns(uint256) {
+        uint256 fee = NFTLizerProxyContract(_NFTLizerProxyContract).getMintingFee();
+        return fee;
     }
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControl) returns (bool) {

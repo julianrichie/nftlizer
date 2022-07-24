@@ -6,16 +6,21 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
+import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
+import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
 
-contract NFTlizer is AccessControl,Pausable,ReentrancyGuard {
+contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, TransferableOwnership {
 
     using Counters for Counters.Counter;
 
     bytes32 private constant INTERNAL_WRITER_ROLE = keccak256("INTERNAL_WRITER_ROLE");
     bytes32 private constant EXTERN_WRITER_ROLE = keccak256("EXTERN_WRITER_ROLE");
+    bytes32 private constant ORDER_ADMIN_ROLE = keccak256("ORDER_ADMIN_ROLE");
     address payable private WithdrawalWallet;
     Counters.Counter private COUNTER;
     mapping(uint256 => NFCTag) private Tags;
+    mapping(bytes32 => uint256) private Orders;
 
     struct NFCTag {
         bytes8  VERSION;
@@ -26,6 +31,12 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard {
         uint256 NFT_ID;
         uint256 NETWORK;
         uint8   ERC;
+    }
+
+    modifier feeProtection() {
+        uint256 fee = NFTLizerProxyContract(_NFTLizerProxyContract).getMintingFee();
+        require(msg.value >= fee);
+        _;
     }
 
     //EVENTS
@@ -39,7 +50,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard {
         WithdrawalWallet = payable(msg.sender);
     }
 
-    function _AddTag(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) onlyRole(INTERNAL_WRITER_ROLE) private {
+    function _AddTag(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) private {
         COUNTER.increment();
         uint256 CURRENT_COUNTER = COUNTER.current();
         Tags[CURRENT_COUNTER] = NFCTag(_VERSION,_UID,CURRENT_COUNTER,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
@@ -50,7 +61,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard {
         emit TagRegistered(_VERSION,_UID,COUNTER.current(),_OWNER,_ADDRESS,_ID,_NETWORK,_ERC,msg.sender);
     }
 
-    function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused onlyRole(EXTERN_WRITER_ROLE) public{
+    function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused feeProtection onlyRole(EXTERN_WRITER_ROLE) public payable{
         _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
         emit TagRegistered(_VERSION,_UID,COUNTER.current(),_OWNER,_ADDRESS,_ID,_NETWORK,_ERC,msg.sender);
         emit ExternTagRegistered(_UID,COUNTER.current(),msg.sender);
@@ -78,35 +89,24 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard {
     }
 
     function Pay(bytes32 _ID) whenNotPaused public payable nonReentrant {
-        require(msg.value > 0,"invalid value");
+        require(msg.value >= Orders[_ID],"invalid amount");
+        address destinationWallet = payable(_WithdrawalWalletAddress);
+        (bool success,) = destinationWallet.call{value: msg.value}("");
+        require(success,"payment failed");
         emit PaymentReceived(_ID,msg.sender,msg.value);
+    }
+
+    function GetMintingFee() public view returns(uint256) {
+        uint256 fee = NFTLizerProxyContract(_NFTLizerProxyContract).getMintingFee();
+        return fee;
     }
 
     function GetContractBalance() public view returns (uint256) {
         return address(this).balance;
     }
 
-    function WithdrawBalance() public nonReentrant onlyRole(DEFAULT_ADMIN_ROLE) {
-        uint256 amount = address(this).balance;
-        (bool success,) = WithdrawalWallet.call{value: amount}("");
-        require(success,"failed to withdraw balance");
-        emit WithdrawalSuccess(amount);
-    }
-
-    function GrantWriterRole(address _USER,bool EXTERN) public onlyRole(DEFAULT_ADMIN_ROLE){
-        if (EXTERN == true) {
-            _setupRole(EXTERN_WRITER_ROLE, _USER);
-        } else {
-            _setupRole(INTERNAL_WRITER_ROLE,_USER);
-        }
-    }
-
-    function RevokeWriterRole(address _USER,bool EXTERN) public onlyRole(DEFAULT_ADMIN_ROLE){
-        if (EXTERN == true) {
-            _revokeRole(EXTERN_WRITER_ROLE,_USER);
-        } else {
-            _revokeRole(INTERNAL_WRITER_ROLE,_USER);
-        }
+    function CreateOrder(bytes32 _ID,uint256 _AMT) public onlyRole(ORDER_ADMIN_ROLE) {
+        Orders[_ID] = _AMT;
     }
 
 }

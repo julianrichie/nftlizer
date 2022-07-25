@@ -37,8 +37,8 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
     using Counters for Counters.Counter;
     Counters.Counter private COUNTER;
     
-    event TokenMinted(address DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
-    event RequestForApproval(uint256 ID, address DESTINATION, bytes32 UUID, bytes8 RS, bytes4 PT);
+    event TokenMinted(address indexed DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
+    event RequestForApproval(uint256 indexed ID, address indexed DESTINATION, bytes32 UUID, bytes8 RS, bytes4 PT);
 
     //Administrative tasks
     function _initializeContract(bytes32 name, bytes32[5] memory description,address newOwner) internal {

@@ -31,8 +31,8 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard,Transfer
     mapping(uint256 => address) private TOKEN_PUBLISHERS;
     Counters.Counter private COUNTER;
 
-    event PublisherAdded(address wallet,bytes32[3] name);
-    event TokenMinted(address SOURCE, address DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
+    event PublisherAdded(address indexed WALLET,bytes32[3] NAME);
+    event TokenMinted(address indexed SOURCE, address indexed DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
 
     constructor() ERC1155("") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);

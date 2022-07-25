@@ -13,6 +13,9 @@ NFTLizer offer a solution that made it possible for both digital and analog art 
 Main NFTLizer Smart Contract open for public if you are a publisher/artist that wants your works to be authenticate by NFTLizer. Please contact us to authorize your wallet address so you can register your Product’s Smart Tag to our Smart Contract. We realize the limitation of knowledge about Blockchain from publisher Point of View, for that reason we provide two Smart Contract that can be use, and we also provide guidance services. Both Smart Contract will be connected to Main Contract of NFTLizer. NFTLizer is open for any type of publisher, from micro, personal or even enterprises. Like the main purpose of crypto which accessibility of technology and financial platform for all without any governance.
 
 
+##### TEAM MEMBERS:
+[@julianrichie](https://twitter.com/julianrichie)  
+[@misaeleka](https://twitter.com/misaeleka)  
+[@Benareli](https://twiter.com/Benareli)  
 
-
-#### PROUDLY BUILD FROM 🇮🇩 INDONESIA 🇮🇩
+###### PROUDLY BUILD FROM 🇮🇩 INDONESIA 🇮🇩

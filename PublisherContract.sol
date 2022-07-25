@@ -5,11 +5,12 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
 import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
 
-abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwnership, UseProxyContract{
+abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwnership, UseProxyContract, Pausable{
 
     address private _ContractOwner;
     bytes32 internal constant PUBLISHER_ROLE = keccak256("PUBLISHER_ROLE");
@@ -74,7 +75,7 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
     // 2. approver approve minting process & immediately mint the token;
     */
 
-    function requestForApproval(address destination, bytes32 uuid, bytes8 rs, bytes4 pt) public payable feeProtection onlyRole(PUBLISHER_ROLE) {
+    function requestForApproval(address destination, bytes32 uuid, bytes8 rs, bytes4 pt) public payable feeProtection whenNotPaused onlyRole(PUBLISHER_ROLE) {
         COUNTER.increment();
         uint256 current = COUNTER.current();
         _WaitingForApprovals[current] = PendingApproval(destination,uuid,rs,pt);
@@ -84,12 +85,20 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
         emit RequestForApproval(current,destination,uuid,rs,pt);
     }
 
-    function approveForMinting(uint256 id) public onlyRole(APPROVAL_ROLE) {
+    function approveForMinting(uint256 id) public whenNotPaused onlyRole(APPROVAL_ROLE) {
         PendingApproval memory pending = _WaitingForApprovals[id];
         _mint(pending.destination,id,1,"");
         delete _WaitingForApprovals[id];
         emit TokenMinted(pending.destination,id,pending.uuid,pending.rs,pending.pt);
     }
+
+    function pauseContract() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _pause();
+    }
+
+    function resumeContract() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _unpause();
+    } 
 
 
 }

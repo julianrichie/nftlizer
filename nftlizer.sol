@@ -40,13 +40,13 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
     }
 
     //EVENTS
-    event TagRegistered(bytes8 VERSION, bytes7 UID,uint256 INTERNAL_ID,address OWNER,address NFT_ADDRESS,uint256 NFT_ID,uint256 NETWORK,uint8 ERC,address SENDER);
-    event ExternTagRegistered(bytes7 UID,uint256 INTERNAL_ID,address SENDER);
+    event TagRegistered(bytes8 VERSION, bytes7 indexed UID,uint256 INTERNAL_ID,address indexed OWNER,address NFT_ADDRESS,uint256 NFT_ID,uint256 NETWORK,uint8 ERC,address indexed SENDER);
+    event ExternTagRegistered(bytes7 indexed UID,uint256 indexed INTERNAL_ID,address indexed SENDER);
     event PaymentReceived(bytes32 indexed ID, address indexed SENDER, uint256 VALUE);
-    event WithdrawalSuccess(uint256 VALUE);
+        event WithdrawalSuccess(uint256 VALUE);
 
-    constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE,msg.sender);
+        constructor() {
+            _setupRole(DEFAULT_ADMIN_ROLE,msg.sender);
         WithdrawalWallet = payable(msg.sender);
     }
 

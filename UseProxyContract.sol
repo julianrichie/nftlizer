@@ -25,4 +25,10 @@ abstract contract UseProxyContract is AccessControl {
         return _NFTLizerProxyContract;
     }
 
+    function _TransferToken(uint256 amt, address destination) internal returns (bool){
+        address wallet = payable(destination);
+        (bool success,) = wallet.call{value: amt}("");
+        return(success);
+    }
+
 }

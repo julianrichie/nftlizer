@@ -68,8 +68,9 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard,Transfer
         COUNTER.increment();
         uint256 current = COUNTER.current();
         _mint(destination,current,1,"");
-        address wallet = payable(_WithdrawalWalletAddress);
-        (bool success,) = wallet.call{value: msg.value}("");
+        bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
+        // address wallet = payable(_WithdrawalWalletAddress);
+        // (bool success,) = wallet.call{value: msg.value}("");
         require(success,"failed to forward fund to proxy");
         TOKEN_PUBLISHERS[current] = msg.sender;
         emit TokenMinted(msg.sender,destination,current,uuid,rs,pt);

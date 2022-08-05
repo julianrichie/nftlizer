@@ -17,7 +17,6 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
     bytes32 private constant INTERNAL_WRITER_ROLE = keccak256("INTERNAL_WRITER_ROLE");
     bytes32 private constant EXTERN_WRITER_ROLE = keccak256("EXTERN_WRITER_ROLE");
     bytes32 private constant ORDER_ADMIN_ROLE = keccak256("ORDER_ADMIN_ROLE");
-    address payable private WithdrawalWallet;
     Counters.Counter private COUNTER;
     mapping(uint256 => NFCTag) private Tags;
     mapping(bytes32 => uint256) private Orders;
@@ -46,7 +45,6 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE,msg.sender);
-        WithdrawalWallet = payable(msg.sender);
     }
 
     function _AddTag(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) private {
@@ -63,7 +61,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
     function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused feeProtection onlyRole(EXTERN_WRITER_ROLE) public payable{
         if (msg.value > 0) {
             bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
-            require(success,"forwarding token failed");
+            require(success,"transfer failed");
         }
         _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
         emit TagRegistered(_VERSION,_UID,COUNTER.current(),_OWNER,_ADDRESS,_ID,_NETWORK,_ERC,msg.sender);

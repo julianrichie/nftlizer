@@ -16,7 +16,6 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
     bytes32 internal constant APPROVAL_ROLE = keccak256("APPROVAL_ROLE");
     bytes32 private _ContractOwnerName;
     bytes32[4] private _ContractDescription;
-    bool private _ContractInitialized = false;
     mapping(uint256 => PendingApproval) private _WaitingForApprovals;
 
     modifier feeProtection() {
@@ -78,8 +77,10 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
         COUNTER.increment();
         uint256 current = COUNTER.current();
         _WaitingForApprovals[current] = PendingApproval(destination,uuid,rs,pt);
-        bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
-        require(success,"failed to forward fund");
+        if (msg.value > 0) {
+            bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
+            require(success,"failed to forward fund");
+        }
         emit RequestForApproval(current,destination,uuid,rs,pt);
     }
 

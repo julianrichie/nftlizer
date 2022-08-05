@@ -26,9 +26,9 @@ abstract contract UseProxyContract is AccessControl {
     }
 
     function _TransferToken(uint256 amt, address destination) internal returns (bool){
-        address wallet = payable(destination);
-        (bool success,) = wallet.call{value: amt}("");
-        return(success);
+       address wallet = payable(destination);
+       (bool success,) = wallet.call{value: amt}("");
+       return(success);
     }
 
 }

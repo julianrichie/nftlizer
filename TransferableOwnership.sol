@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 abstract contract TransferableOwnership is AccessControl {
 
     address internal _ContractOwner;
+    bool internal _ContractInitialized = false;
 
     function transferOwnership(address from, address to) public onlyRole(DEFAULT_ADMIN_ROLE) {
         _setupRole(DEFAULT_ADMIN_ROLE,to);
@@ -15,6 +16,7 @@ abstract contract TransferableOwnership is AccessControl {
     }
 
     function getContractOwner() public view returns(address) {
+        require(_ContractInitialized,"not initialized");
         return _ContractOwner;
     }
 }

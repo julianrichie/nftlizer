@@ -14,6 +14,7 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
 
     bytes32 internal constant PUBLISHER_ROLE = keccak256("PUBLISHER_ROLE");
     bytes32 internal constant APPROVAL_ROLE = keccak256("APPROVAL_ROLE");
+    bool internal _ContractInitialized = false;
     bytes32 private _ContractOwnerName;
     bytes32[4] private _ContractDescription;
     mapping(uint256 => PendingApproval) private _WaitingForApprovals;

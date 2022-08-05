@@ -35,18 +35,17 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     modifier feeProtection() {
         uint256 fee = NFTLizerProxyContract(_NFTLizerProxyContract).getMintingFee();
-        require(msg.value >= fee);
+        require(msg.value >= fee,"insufficient fee");
         _;
     }
 
     //EVENTS
     event TagRegistered(bytes8 VERSION, bytes7 indexed UID,uint256 INTERNAL_ID,address indexed OWNER,address NFT_ADDRESS,uint256 NFT_ID,uint256 NETWORK,uint8 ERC,address indexed SENDER);
-    event ExternTagRegistered(bytes7 indexed UID,uint256 indexed INTERNAL_ID,address indexed SENDER);
+    event ExternTagRegistered(bytes7 indexed UID,uint256 indexed INTERNAL_ID,address indexed SENDER, uint256 FEE);
     event PaymentReceived(bytes32 indexed ID, address indexed SENDER, uint256 VALUE);
-        event WithdrawalSuccess(uint256 VALUE);
 
-        constructor() {
-            _setupRole(DEFAULT_ADMIN_ROLE,msg.sender);
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE,msg.sender);
         WithdrawalWallet = payable(msg.sender);
     }
 
@@ -62,9 +61,13 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
     }
 
     function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused feeProtection onlyRole(EXTERN_WRITER_ROLE) public payable{
+        if (msg.value > 0) {
+            bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
+            require(success,"forwarding token failed");
+        }
         _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
         emit TagRegistered(_VERSION,_UID,COUNTER.current(),_OWNER,_ADDRESS,_ID,_NETWORK,_ERC,msg.sender);
-        emit ExternTagRegistered(_UID,COUNTER.current(),msg.sender);
+        emit ExternTagRegistered(_UID,COUNTER.current(),msg.sender,msg.value);
     }
 
     function GetTag(uint256 _ID,bytes8 _VERSION) public view returns(bytes7,address,address,uint256,uint256,uint8) {
@@ -90,8 +93,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     function Pay(bytes32 _ID) whenNotPaused public payable nonReentrant {
         require(msg.value >= Orders[_ID],"invalid amount");
-        address destinationWallet = payable(_WithdrawalWalletAddress);
-        (bool success,) = destinationWallet.call{value: msg.value}("");
+        bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
         require(success,"payment failed");
         emit PaymentReceived(_ID,msg.sender,msg.value);
     }

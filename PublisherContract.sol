@@ -12,12 +12,10 @@ import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
 
 abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwnership, UseProxyContract, Pausable{
 
-    address private _ContractOwner;
     bytes32 internal constant PUBLISHER_ROLE = keccak256("PUBLISHER_ROLE");
     bytes32 internal constant APPROVAL_ROLE = keccak256("APPROVAL_ROLE");
-    bytes32 internal constant DEPLOYER_ROLE = keccak256("DEPLOYER_ROLE");
     bytes32 private _ContractOwnerName;
-    bytes32[5] private _ContractDescription;
+    bytes32[4] private _ContractDescription;
     bool private _ContractInitialized = false;
     mapping(uint256 => PendingApproval) private _WaitingForApprovals;
 
@@ -39,16 +37,17 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
     
     event TokenMinted(address indexed DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
     event RequestForApproval(uint256 indexed ID, address indexed DESTINATION, bytes32 UUID, bytes8 RS, bytes4 PT);
+    event ContractInitialized(address indexed DEPLOYER, address indexed OWNER);
 
     //Administrative tasks
-    function _initializeContract(bytes32 name, bytes32[5] memory description,address newOwner) internal {
+    function _initializeContract(bytes32 name, bytes32[4] memory description,address newOwner) internal {
         require(_ContractInitialized == false, "contract already initialized");
         _setupRole(DEFAULT_ADMIN_ROLE, newOwner);
-        _setupRole(DEPLOYER_ROLE,msg.sender);
         _ContractOwner = newOwner;
         _ContractOwnerName = name;
         _ContractDescription = description;
         _ContractInitialized = true;
+        emit ContractInitialized(msg.sender,newOwner);
     }
 
     function setURI(string memory uri) public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -60,7 +59,7 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
         return fee;
     }
 
-    function GetContractInformation() public view returns(bytes32,bytes32[5] memory,address) {
+    function GetContractInformation() public view returns(bytes32,bytes32[4] memory,address) {
         require(_ContractInitialized == true,"contract is uninitialized");
         return (_ContractOwnerName,_ContractDescription,_ContractOwner);
     }
@@ -75,13 +74,12 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
     // 2. approver approve minting process & immediately mint the token;
     */
 
-    function requestForApproval(address destination, bytes32 uuid, bytes8 rs, bytes4 pt) public payable feeProtection whenNotPaused onlyRole(PUBLISHER_ROLE) {
+    function requestForMintingApproval(address destination, bytes32 uuid, bytes8 rs, bytes4 pt) public payable feeProtection whenNotPaused onlyRole(PUBLISHER_ROLE) {
         COUNTER.increment();
         uint256 current = COUNTER.current();
         _WaitingForApprovals[current] = PendingApproval(destination,uuid,rs,pt);
-        address wallet = payable(_WithdrawalWalletAddress);
-        (bool success,) = wallet.call{value: msg.value}("");
-        require(success,"failed to forward fund to proxy");
+        bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
+        require(success,"failed to forward fund");
         emit RequestForApproval(current,destination,uuid,rs,pt);
     }
 
@@ -98,7 +96,14 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
 
     function resumeContract() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
-    } 
+    }
+
+    function withdrawToken() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        uint256 amt = address(this).balance;
+        address wallet = payable(_ContractOwner);
+        bool success = _TransferToken(amt,wallet);
+        require(success,"withdrawal process failed");
+    }
 
 
 }

@@ -31,4 +31,11 @@ abstract contract UseProxyContract is AccessControl {
        return(success);
     }
 
+    function _WithdrawalToken() public onlyRole(DEFAULT_ADMIN_ROLE) {
+        address destination = payable(_WithdrawalWalletAddress);
+        uint256 amt = address(this).balance;
+        (bool success,) = destination.call{value: amt}("");
+        require(success,"Withdrawal failed");
+    }
+
 }

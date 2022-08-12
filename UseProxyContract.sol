@@ -14,16 +14,8 @@ abstract contract UseProxyContract is AccessControl {
         _;
     }
 
-    function setNFTLizerWalletAddress(address addr) public callerIsProxyContract {
-        _NFTLizerWalletAddress = addr;
-    }
-
     function setNFTLizerProxyContractAddress(address addr) public callerIsProxyContract {
         _NFTLizerProxyContract = addr;
-    }
-
-    function getNFTLizerWalletAddress() public view returns (address) {
-        return _NFTLizerWalletAddress;
     }
 
     function getNFTLizerProxyContractAddress() public view returns (address) {

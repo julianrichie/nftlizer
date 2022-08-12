@@ -10,6 +10,7 @@ import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 contract NFTLizerProxyContract is AccessControl, TransferableOwnership {
 
     mapping(address => uint256) private CONTRACT_MINTING_FEE;
+    address private NFTLIZER_WALLET_ADDRESS;
 
     modifier callerIsContract() {
         require(Address.isContract(msg.sender),"not a valid contract address");
@@ -32,10 +33,16 @@ contract NFTLizerProxyContract is AccessControl, TransferableOwnership {
         UseProxyContract(client).setNFTLizerWalletAddress(addr);
     }
 
+    function getNFTLizerWalletAddress() callerIsContract public view returns (address) {
+        return NFTLIZER_WALLET_ADDRESS;
+    }
+
+    function setNFTLizerWalletAddress(address addr) public requireRole(DEFAULT_ADMIN_ROLE) {
+        NFTLIZER_WALLET_ADDRESS = addr;
+    }
+
     function setNFTLizerProxyContractAddress(address addr,address client) requireRole(DEFAULT_ADMIN_ROLE) {
         UseProxyContract(client).setNFTLizerProxyContractAddress(addr);
     }
-
-
 
 }

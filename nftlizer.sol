@@ -110,8 +110,8 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
         Orders[_ID] = _AMT;
     }
 
-    function getNFTLizerWalletAddress() private returns (address) {
-        address nftlizer = ProxyContract(_NFTLizerProxyContract).getNFTLizerWalletAddress();
+    function getNFTLizerWalletAddress() private view returns (address) {
+        address nftlizer = NFTLizerProxyContract(_NFTLizerProxyContract).getNFTLizerWalletAddress();
         return nftlizer;
     }
 

@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 abstract contract UseProxyContract is AccessControl {
 
     //DONT FORGET TO OVERRIDE THIS ON INITIALIZATION
-    address internal _NFTLizerWalletAddress = 0x0000000000000000000000000000000000000000;
     address internal _NFTLizerProxyContract = 0x0000000000000000000000000000000000000000;
 
     modifier callerIsProxyContract() {

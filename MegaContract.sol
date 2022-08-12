@@ -70,7 +70,7 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard,Transfer
         uint256 current = COUNTER.current();
         _mint(destination,current,1,"");
         if (msg.value > 0) {
-            bool success = _TransferToken(msg.value,_NFTLizerWalletAddress);
+            bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
             require(success,"failed to forward fund");
         }
         TOKEN_PUBLISHERS[current] = msg.sender;
@@ -93,6 +93,11 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard,Transfer
 
     function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
+    }
+
+    function getNFTLizerWalletAddress() private returns (address) {
+        address nftlizer = ProxyContract(_NFTLizerProxyContract).getNFTLizerWalletAddress();
+        return nftlizer;
     }
 
 }

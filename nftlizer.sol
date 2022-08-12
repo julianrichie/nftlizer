@@ -61,7 +61,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused feeProtection onlyRole(EXTERN_WRITER_ROLE) public payable{
         if (msg.value > 0) {
-            bool success = _TransferToken(msg.value,_NFTLizerWalletAddress);
+            bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
             require(success,"transfer failed");
         }
         _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
@@ -92,7 +92,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     function Pay(bytes32 _ID) whenNotPaused public payable nonReentrant {
         require(msg.value >= Orders[_ID],"invalid amount");
-        bool success = _TransferToken(msg.value,_NFTLizerWalletAddress);
+        bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
         require(success,"payment failed");
         emit PaymentReceived(_ID,msg.sender,msg.value);
     }
@@ -108,6 +108,11 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     function CreateOrder(bytes32 _ID,uint256 _AMT) public onlyRole(ORDER_ADMIN_ROLE) {
         Orders[_ID] = _AMT;
+    }
+
+    function getNFTLizerWalletAddress() private returns (address) {
+        address nftlizer = ProxyContract(_NFTLizerProxyContract).getNFTLizerWalletAddress();
+        return nftlizer;
     }
 
 }

@@ -2,6 +2,7 @@
 // Copyright (c) 2022 JULIAN WAJONG julian@nftlizer.com NFTLIZER.COM
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -9,78 +10,39 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
 import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
+import "github.com/julianrichie/nftlizer/blob/main/WithdrawToken.sol";
 
-contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, TransferableOwnership {
-
+contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard,TransferableOwnership, UseProxyContract, WithdrawToken {
     using Counters for Counters.Counter;
 
-    bytes32 private constant INTERNAL_WRITER_ROLE = keccak256("INTERNAL_WRITER_ROLE");
-    bytes32 private constant EXTERN_WRITER_ROLE = keccak256("EXTERN_WRITER_ROLE");
-    bytes32 private constant ORDER_ADMIN_ROLE = keccak256("ORDER_ADMIN_ROLE");
-    address payable private WithdrawalWallet;
-    Counters.Counter private COUNTER;
-    mapping(uint256 => NFCTag) private Tags;
-    mapping(bytes32 => uint256) private Orders;
-
-    struct NFCTag {
-        bytes8  VERSION;
-        bytes7  UID;
-        uint256 INTERNAL_ID;
-        address OWNER;
-        address NFT_ADDRESS;
-        uint256 NFT_ID;
-        uint256 NETWORK;
-        uint8   ERC;
+    struct WalletOwner {
+        bytes32[3] name;
+        uint256 block_number;
+        bytes32 block_hash;
     }
 
     modifier feeProtection() {
         uint256 fee = NFTLizerProxyContract(_NFTLizerProxyContract).getMintingFee();
-        require(msg.value >= fee,"insufficient fee");
+        require(msg.value >= fee);
         _;
     }
+    
+    bytes32 private constant PUBLISHER_ROLE = keccak256("PUBLISHER_ROLE");
+    mapping(address => WalletOwner) private WALLET_INFORMATION;
+    mapping(uint256 => address) private TOKEN_PUBLISHERS;
+    Counters.Counter private COUNTER;
 
-    //EVENTS
-    event TagRegistered(bytes8 VERSION, bytes7 indexed UID,uint256 INTERNAL_ID,address indexed OWNER,address NFT_ADDRESS,uint256 NFT_ID,uint256 NETWORK,uint8 ERC,address indexed SENDER);
-    event ExternTagRegistered(bytes7 indexed UID,uint256 indexed INTERNAL_ID,address indexed SENDER, uint256 FEE);
-    event PaymentReceived(bytes32 indexed ID, address indexed SENDER, uint256 VALUE);
+    event PublisherAdded(address indexed WALLET,bytes32[3] NAME);
+    event TokenMinted(address indexed SOURCE, address indexed DESTINATION, uint256 TOKEN_ID, bytes32 UUID, bytes8 RS, bytes4 PT);
 
-    constructor() {
-        _setupRole(DEFAULT_ADMIN_ROLE,msg.sender);
-        WithdrawalWallet = payable(msg.sender);
+    constructor() ERC1155("") {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function _AddTag(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) private {
-        COUNTER.increment();
-        uint256 CURRENT_COUNTER = COUNTER.current();
-        Tags[CURRENT_COUNTER] = NFCTag(_VERSION,_UID,CURRENT_COUNTER,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
-    }
+    //ADMINISTRATIVE PARTS
 
-    function AddTag(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) onlyRole(INTERNAL_WRITER_ROLE) public{
-        _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
-        emit TagRegistered(_VERSION,_UID,COUNTER.current(),_OWNER,_ADDRESS,_ID,_NETWORK,_ERC,msg.sender);
-    }
-
-    function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused feeProtection onlyRole(EXTERN_WRITER_ROLE) public payable{
-        if (msg.value > 0) {
-            bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
-            require(success,"forwarding token failed");
-        }
-        _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
-        emit TagRegistered(_VERSION,_UID,COUNTER.current(),_OWNER,_ADDRESS,_ID,_NETWORK,_ERC,msg.sender);
-        emit ExternTagRegistered(_UID,COUNTER.current(),msg.sender,msg.value);
-    }
-
-    function GetTag(uint256 _ID,bytes8 _VERSION) public view returns(bytes7,address,address,uint256,uint256,uint8) {
-        require(Tags[_ID].VERSION == _VERSION,"no match");
-        return(Tags[_ID].UID,Tags[_ID].OWNER,Tags[_ID].NFT_ADDRESS,Tags[_ID].NFT_ID,Tags[_ID].NETWORK,Tags[_ID].ERC);
-    }
-
-    function GetTagVersion(uint256 _ID) public view returns(bytes8) {
-        return(Tags[_ID].VERSION);
-    }
-
-    function GetCounter() public view onlyRole(DEFAULT_ADMIN_ROLE) returns(uint256) {
-        return COUNTER.current();
+    function setURL(string memory URI) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setURI(URI);
     }
 
     function PauseContract() public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -91,24 +53,46 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
         _unpause();
     }
 
-    function Pay(bytes32 _ID) whenNotPaused public payable nonReentrant {
-        require(msg.value >= Orders[_ID],"invalid amount");
-        bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
-        require(success,"payment failed");
-        emit PaymentReceived(_ID,msg.sender,msg.value);
-    }
-
-    function GetMintingFee() public view returns(uint256) {
-        uint256 fee = NFTLizerProxyContract(_NFTLizerProxyContract).getMintingFee();
-        return fee;
-    }
-
     function GetContractBalance() public view returns (uint256) {
         return address(this).balance;
     }
 
-    function CreateOrder(bytes32 _ID,uint256 _AMT) public onlyRole(ORDER_ADMIN_ROLE) {
-        Orders[_ID] = _AMT;
+    function AddPublisher(address wallet,bytes32[3] memory name) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        _setupRole(PUBLISHER_ROLE,wallet);
+        WalletOwner memory wo = WalletOwner(name, block.number, blockhash(block.number));
+        WALLET_INFORMATION[wallet] = wo;
+        emit PublisherAdded(wallet, name);
+    }
+
+    // PUBLIC ACCESSIBLE
+    function MintToken(address destination,bytes32 uuid, bytes8 rs, bytes4 pt) public payable whenNotPaused feeProtection onlyRole(PUBLISHER_ROLE){
+        COUNTER.increment();
+        uint256 current = COUNTER.current();
+        _mint(destination,current,1,"");
+        if (msg.value > 0) {
+            bool success = _TransferToken(msg.value,_NFTLizerWalletAddress);
+            require(success,"failed to forward fund");
+        }
+        TOKEN_PUBLISHERS[current] = msg.sender;
+        emit TokenMinted(msg.sender,destination,current,uuid,rs,pt);
+    }
+
+    function GetPublisher(address wallet) public view returns(bytes32[3] memory) {
+        WalletOwner memory data = WALLET_INFORMATION[wallet];
+        return data.name;
+    }
+
+    function GetTokenPublisher(uint256 id) public view returns(address) {
+        return TOKEN_PUBLISHERS[id];
+    }
+
+    function getMintingFee() public view onlyRole(DEFAULT_ADMIN_ROLE) returns(uint256) {
+        uint256 fee = NFTLizerProxyContract(_NFTLizerProxyContract).getMintingFee();
+        return fee;
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControl) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 
 }

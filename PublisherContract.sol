@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
 import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
+import "github.com/julianrichie/nftlizer/blob/main/WithdrawToken.sol";
 
 abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwnership, UseProxyContract, Pausable{
 
@@ -79,7 +80,7 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
         uint256 current = COUNTER.current();
         _WaitingForApprovals[current] = PendingApproval(destination,uuid,rs,pt);
         if (msg.value > 0) {
-            bool success = _TransferToken(msg.value,_NFTLizerWalletAddress);
+            bool success = _TransferToken(msg.value,getNFTLizerWalletAddress);
             require(success,"failed to forward fund");
         }
         emit RequestForApproval(current,destination,uuid,rs,pt);
@@ -98,6 +99,11 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
 
     function resumeContract() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
+    }
+
+    function getNFTLizerWalletAddress() private returns (address) {
+        address nftlizer = ProxyContract(_NFTLizerProxyContract).getNFTLizerWalletAddress();
+        return nftlizer;
     }
 
 

@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
+import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 
 contract NFTLizerProxyContract is AccessControl, TransferableOwnership {
 
@@ -26,5 +27,15 @@ contract NFTLizerProxyContract is AccessControl, TransferableOwnership {
     function setMintingFee(address addr,uint256 fee) public onlyRole(DEFAULT_ADMIN_ROLE){
         CONTRACT_MINTING_FEE[addr] = fee;
     }
+
+    function setNFTLizerWalletAddress(address addr,address client) requireRole(DEFAULT_ADMIN_ROLE) {
+        UseProxyContract(client).setNFTLizerWalletAddress(addr);
+    }
+
+    function setNFTLizerProxyContractAddress(address addr,address client) requireRole(DEFAULT_ADMIN_ROLE) {
+        UseProxyContract(client).setNFTLizerProxyContractAddress(addr);
+    }
+
+
 
 }

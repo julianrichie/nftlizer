@@ -95,8 +95,8 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard,Transfer
         return super.supportsInterface(interfaceId);
     }
 
-    function getNFTLizerWalletAddress() private returns (address) {
-        address nftlizer = ProxyContract(_NFTLizerProxyContract).getNFTLizerWalletAddress();
+    function getNFTLizerWalletAddress() private view returns (address) {
+        address nftlizer = NFTLizerProxyContract(_NFTLizerProxyContract).getNFTLizerWalletAddress();
         return nftlizer;
     }
 

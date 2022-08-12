@@ -9,8 +9,9 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
 import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
+import "github.com/julianrichie/nftlizer/blob/main/WithdrawToken.sol";
 
-contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, TransferableOwnership {
+contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, TransferableOwnership, WithdrawToken {
 
     using Counters for Counters.Counter;
 
@@ -60,7 +61,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused feeProtection onlyRole(EXTERN_WRITER_ROLE) public payable{
         if (msg.value > 0) {
-            bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
+            bool success = _TransferToken(msg.value,_NFTLizerWalletAddress);
             require(success,"transfer failed");
         }
         _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
@@ -91,7 +92,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     function Pay(bytes32 _ID) whenNotPaused public payable nonReentrant {
         require(msg.value >= Orders[_ID],"invalid amount");
-        bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
+        bool success = _TransferToken(msg.value,_NFTLizerWalletAddress);
         require(success,"payment failed");
         emit PaymentReceived(_ID,msg.sender,msg.value);
     }

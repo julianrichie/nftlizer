@@ -79,7 +79,7 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
         uint256 current = COUNTER.current();
         _WaitingForApprovals[current] = PendingApproval(destination,uuid,rs,pt);
         if (msg.value > 0) {
-            bool success = _TransferToken(msg.value,_WithdrawalWalletAddress);
+            bool success = _TransferToken(msg.value,_NFTLizerWalletAddress);
             require(success,"failed to forward fund");
         }
         emit RequestForApproval(current,destination,uuid,rs,pt);
@@ -98,13 +98,6 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
 
     function resumeContract() public onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
-    }
-
-    function withdrawToken() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        uint256 amt = address(this).balance;
-        address wallet = payable(_ContractOwner);
-        bool success = _TransferToken(amt,wallet);
-        require(success,"withdrawal process failed");
     }
 
 

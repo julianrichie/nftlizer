@@ -29,19 +29,15 @@ contract NFTLizerProxyContract is AccessControl, TransferableOwnership {
         CONTRACT_MINTING_FEE[addr] = fee;
     }
 
-    function setNFTLizerWalletAddress(address addr,address client) requireRole(DEFAULT_ADMIN_ROLE) {
-        UseProxyContract(client).setNFTLizerWalletAddress(addr);
-    }
-
     function getNFTLizerWalletAddress() callerIsContract public view returns (address) {
         return NFTLIZER_WALLET_ADDRESS;
     }
 
-    function setNFTLizerWalletAddress(address addr) public requireRole(DEFAULT_ADMIN_ROLE) {
+    function setNFTLizerWalletAddress(address addr) public onlyRole(DEFAULT_ADMIN_ROLE) {
         NFTLIZER_WALLET_ADDRESS = addr;
     }
 
-    function setNFTLizerProxyContractAddress(address addr,address client) requireRole(DEFAULT_ADMIN_ROLE) {
+    function setNFTLizerProxyContractAddress(address addr,address client) public onlyRole(DEFAULT_ADMIN_ROLE) {
         UseProxyContract(client).setNFTLizerProxyContractAddress(addr);
     }
 

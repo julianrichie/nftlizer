@@ -6,7 +6,9 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 abstract contract UseProxyContract is AccessControl { 
 
+
     address internal _WithdrawalWalletAddress = 0x0000000000000000000000000000000000000000;
+    address internal _NFTLizerWithdrawalWalletAddress = 0x0000000000000000000000000000000000000000;
     address internal _NFTLizerProxyContract = 0x0000000000000000000000000000000000000000;
 
     function setWithdrawalWalletAddress(address addr) public onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -29,13 +31,6 @@ abstract contract UseProxyContract is AccessControl {
        address wallet = payable(destination);
        (bool success,) = wallet.call{value: amt}("");
        return(success);
-    }
-
-    function _WithdrawalToken() public onlyRole(DEFAULT_ADMIN_ROLE) {
-        address destination = payable(_WithdrawalWalletAddress);
-        uint256 amt = address(this).balance;
-        (bool success,) = destination.call{value: amt}("");
-        require(success,"Withdrawal failed");
     }
 
 }

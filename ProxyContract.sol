@@ -37,6 +37,9 @@ contract NFTLizerProxyContract is AccessControl, TransferableOwnership {
         return NFTLIZER_WALLET_ADDRESS;
     }
 
+    /*CRITICAL FUNCTION CALL THIS WITH CAUTION.
+    / MAKE SURE TO HAVE THE NEW PROXY CONTRACT IS READY BEFORE CALLING THIS FUNCTION
+    */
     function setNFTLizerProxyContractAddressForClient(address addr,address client) public onlyRole(DEFAULT_ADMIN_ROLE) {
         UseProxyContract(client).setNFTLizerProxyContractAddress(addr);
     }

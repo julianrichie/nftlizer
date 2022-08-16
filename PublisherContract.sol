@@ -42,7 +42,7 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
     event ContractInitialized(address indexed DEPLOYER, address indexed OWNER);
 
     //Administrative tasks
-    function _initializeContract(bytes32 name, bytes32[4] memory description,address newOwner) internal {
+    function _initializeContract(bytes32 name, bytes32[4] memory description,address newOwner,address proxy) internal {
         require(_ContractInitialized == false, "contract already initialized");
         _setupRole(DEFAULT_ADMIN_ROLE, newOwner);
         _ContractOwner = newOwner;
@@ -50,6 +50,7 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
         _ContractDescription = description;
         _ContractInitialized = true;
         emit ContractInitialized(msg.sender,newOwner);
+        _NFTLizerProxyContract = proxy;
     }
 
     function setURI(string memory uri) public onlyRole(DEFAULT_ADMIN_ROLE) {

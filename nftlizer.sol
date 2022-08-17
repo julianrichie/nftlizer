@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
 import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
-import "github.com/julianrichie/nftlizer/blob/main/Utilities.sol";
 import "github.com/julianrichie/nftlizer/blob/main/WithdrawToken.sol";
 
 contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, TransferableOwnership, WithdrawToken {
@@ -47,7 +46,11 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE,msg.sender);
-        _NFTLizerProxyContract = 0xd9145CCE52D386f254917e481eB44e9943F39138;
+        _SetProxyContract();
+    }
+
+    function _SetProxyContract() private {
+        _NFTLizerProxyContract = 0x4c0Fa7e74A37D7Ec000D1067F7f27E69Bb9f8b42;
     }
 
     function _AddTag(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) private {
@@ -63,7 +66,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused feeProtection onlyRole(EXTERN_WRITER_ROLE) public payable{
         if (msg.value > 0) {
-            bool success = Utilities.TransferToken(msg.value,getNFTLizerWalletAddress());
+            bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
             require(success,"transfer failed");
         }
         _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
@@ -94,7 +97,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
 
     function Pay(bytes32 _ID) whenNotPaused public payable nonReentrant {
         require(msg.value >= Orders[_ID],"invalid amount");
-        bool success = Utilities.TransferToken(msg.value,getNFTLizerWalletAddress());
+        bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
         require(success,"payment failed");
         emit PaymentReceived(_ID,msg.sender,msg.value);
     }

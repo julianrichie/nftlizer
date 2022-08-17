@@ -11,7 +11,6 @@ import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
 import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/WithdrawToken.sol";
-import "github.com/julianrichie/nftlizer/blob/main/Utilities.sol";
 
 contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard,TransferableOwnership, UseProxyContract, WithdrawToken {
     using Counters for Counters.Counter;
@@ -71,7 +70,7 @@ contract MegaContract is ERC1155,AccessControl,Pausable,ReentrancyGuard,Transfer
         uint256 current = COUNTER.current();
         _mint(destination,current,1,"");
         if (msg.value > 0) {
-            bool success = Utilities.TransferToken(msg.value,getNFTLizerWalletAddress());
+            bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
             require(success,"failed to forward fund");
         }
         TOKEN_PUBLISHERS[current] = msg.sender;

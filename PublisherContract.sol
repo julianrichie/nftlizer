@@ -10,7 +10,6 @@ import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
 import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/WithdrawToken.sol";
-import "github.com/julianrichie/nftlizer/blob/main/Utilities.sol";
 
 abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwnership, UseProxyContract, Pausable, WithdrawToken{
 
@@ -82,7 +81,7 @@ abstract contract PublisherContract is ERC1155, AccessControl,TransferableOwners
         uint256 current = COUNTER.current();
         _WaitingForApprovals[current] = PendingApproval(destination,uuid,rs,pt);
         if (msg.value > 0) {
-            bool success = Utilities.TransferToken(msg.value,getNFTLizerWalletAddress());
+            bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
             require(success,"failed to forward fund");
         }
         emit RequestForApproval(current,destination,uuid,rs,pt);

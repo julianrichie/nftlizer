@@ -5,13 +5,12 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "github.com/julianrichie/nftlizer/blob/main/TransferableOwnership.sol";
 import "github.com/julianrichie/nftlizer/blob/main/UseProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/ProxyContract.sol";
 import "github.com/julianrichie/nftlizer/blob/main/WithdrawToken.sol";
 
-contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, TransferableOwnership, WithdrawToken {
+contract NFTlizer is AccessControl,Pausable, UseProxyContract, TransferableOwnership, WithdrawToken {
 
     using Counters for Counters.Counter;
 
@@ -50,7 +49,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
     }
 
     function _SetProxyContract() private {
-        _NFTLizerProxyContract = 0x4c0Fa7e74A37D7Ec000D1067F7f27E69Bb9f8b42;
+        _NFTLizerProxyContract = 0x50c3e6728a045D7ffb7f020d10D94cBc695ACB8a;
     }
 
     function _AddTag(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) private {
@@ -60,11 +59,13 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
     }
 
     function AddTag(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) onlyRole(INTERNAL_WRITER_ROLE) public{
+        require(checkForExisting(_ID) == true,"duplicate found");
         _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
         emit TagRegistered(_VERSION,_UID,COUNTER.current(),_OWNER,_ADDRESS,_ID,_NETWORK,_ERC,msg.sender);
     }
 
     function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused feeProtection onlyRole(EXTERN_WRITER_ROLE) public payable{
+        require(checkForExisting(_ID) == false,"duplicate found");
         if (msg.value > 0) {
             bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
             require(success,"transfer failed");
@@ -95,7 +96,7 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
         _unpause();
     }
 
-    function Pay(bytes32 _ID) whenNotPaused public payable nonReentrant {
+    function Pay(bytes32 _ID) whenNotPaused public payable {
         require(msg.value >= Orders[_ID],"invalid amount");
         bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
         require(success,"payment failed");
@@ -118,6 +119,15 @@ contract NFTlizer is AccessControl,Pausable,ReentrancyGuard, UseProxyContract, T
     function getNFTLizerWalletAddress() private view returns (address) {
         address nftlizer = NFTLizerProxyContract(_NFTLizerProxyContract).getNFTLizerWalletAddress();
         return nftlizer;
+    }
+
+    function checkForExisting(uint256 id) private view returns(bool) {
+        NFCTag memory tag = Tags[id];
+        if (tag.VERSION == bytes8(0x0)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
 }

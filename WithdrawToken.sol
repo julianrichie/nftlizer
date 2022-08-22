@@ -3,10 +3,11 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-abstract contract WithdrawToken is AccessControl {
+abstract contract WithdrawToken is AccessControl, ReentrancyGuard {
 
-    function withdrawToken(address addr) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function withdrawToken(address addr) public onlyRole(DEFAULT_ADMIN_ROLE) nonReentrant{
         address wallet = payable(addr);
         bool success = _TransferToken(_GetAvailableToken(),wallet);
         require(success,"withdrawal process failed");

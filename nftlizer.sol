@@ -59,13 +59,11 @@ contract NFTlizer is AccessControl,Pausable, UseProxyContract, TransferableOwner
     }
 
     function AddTag(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) onlyRole(INTERNAL_WRITER_ROLE) public{
-        require(checkForExisting(_ID) == true,"duplicate found");
         _AddTag(_VERSION,_UID,_OWNER,_ADDRESS,_ID,_NETWORK,_ERC);
         emit TagRegistered(_VERSION,_UID,COUNTER.current(),_OWNER,_ADDRESS,_ID,_NETWORK,_ERC,msg.sender);
     }
 
     function AddTagExtern(bytes8 _VERSION,bytes7 _UID, address _OWNER,address _ADDRESS, uint256 _ID, uint256 _NETWORK,uint8 _ERC) whenNotPaused feeProtection onlyRole(EXTERN_WRITER_ROLE) public payable{
-        require(checkForExisting(_ID) == false,"duplicate found");
         if (msg.value > 0) {
             bool success = _TransferToken(msg.value,getNFTLizerWalletAddress());
             require(success,"transfer failed");
@@ -78,6 +76,11 @@ contract NFTlizer is AccessControl,Pausable, UseProxyContract, TransferableOwner
     function GetTag(uint256 _ID,bytes8 _VERSION) public view returns(bytes7,address,address,uint256,uint256,uint8) {
         require(Tags[_ID].VERSION == _VERSION,"no match");
         return(Tags[_ID].UID,Tags[_ID].OWNER,Tags[_ID].NFT_ADDRESS,Tags[_ID].NFT_ID,Tags[_ID].NETWORK,Tags[_ID].ERC);
+    }
+
+    function TransferTag(uint256 _ID, address _DESTINATION) public {
+        require(Tags[_ID].OWNER == msg.sender,"unauthorized");
+        Tags[_ID].OWNER = _DESTINATION;
     }
 
     function GetTagVersion(uint256 _ID) public view returns(bytes8) {
@@ -120,14 +123,4 @@ contract NFTlizer is AccessControl,Pausable, UseProxyContract, TransferableOwner
         address nftlizer = NFTLizerProxyContract(_NFTLizerProxyContract).getNFTLizerWalletAddress();
         return nftlizer;
     }
-
-    function checkForExisting(uint256 id) private view returns(bool) {
-        NFCTag memory tag = Tags[id];
-        if (tag.VERSION == bytes8(0x0)) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
 }

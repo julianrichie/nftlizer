@@ -7,18 +7,25 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 
 contract NFTLizerOpenDirectory is AccessControl,Pausable{
 
+    bytes32 private constant VERIFICATOR_ROLE = keccak256("VERIFICATOR_ROLE");
+
     mapping(address => bytes32) Wallets;
+    mapping(address => bool) Status;
 
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function registerWallet(bytes32 name) public whenNotPaused {
+    function register(bytes32 name) public whenNotPaused {
         Wallets[msg.sender] = name;
     }
 
-    function getWallet(address wallet) public view returns(bytes32){
-        return Wallets[wallet];
+    function getLabel(address wallet) public view returns(bytes32,bool){
+        return (Wallets[wallet],Status[wallet]);
+    }
+
+    function verifyAddress(address wallet, bool status) public whenNotPaused onlyRole(VERIFICATOR_ROLE) {
+        Status[wallet] = status;
     }
 
     function pauseContract() public onlyRole(DEFAULT_ADMIN_ROLE) {
